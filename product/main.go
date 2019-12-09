@@ -72,28 +72,8 @@ func Products(w http.ResponseWriter, r *http.Request) {
 	products := []product{
 		{
 			ID:    1,
-			Name:  "Sepeda",
+			Name:  "Macbook",
 			Price: 2000000.00,
-		},
-		{
-			ID:    2,
-			Name:  "Mecin",
-			Price: 500.00,
-		},
-		{
-			ID:    3,
-			Name:  "Kacamata",
-			Price: 1500000.00,
-		},
-		{
-			ID:    4,
-			Name:  "Kopi Gayo",
-			Price: 50000.00,
-		},
-		{
-			ID:    5,
-			Name:  "Macbook Pro",
-			Price: 20000000.00,
 		},
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -123,5 +103,10 @@ func port() string {
 }
 
 func hostname() string {
-	return os.Getenv("CONSUL_HTTP_ADDR")
+	// return os.Getenv("CONSUL_HTTP_ADDR")
+	hn, err := os.Hostname()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	return hn
 }

@@ -59,7 +59,7 @@ func lookupServiceWithConsul(serviceName string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	srvc := services["product-service"]
+	srvc := services["product"]
 	address := srvc.Address
 	port := srvc.Port
 	return fmt.Sprintf("http://%s:%v", address, port), nil
@@ -99,7 +99,7 @@ func UserProduct(w http.ResponseWriter, r *http.Request) {
 	}
 	u := User{
 		ID:       1,
-		Username: "didiyudha@gmail.com",
+		Username: "wn48@gmail.com",
 	}
 	u.Products = p
 	w.Header().Set("Content-Type", "application/json")
@@ -116,5 +116,10 @@ func port() string {
 }
 
 func hostname() string {
-	return os.Getenv("CONSUL_HTTP_ADDR")
+	// return os.Getenv("CONSUL_HTTP_ADDR")
+	hn, err := os.Hostname()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	return hn
 }
