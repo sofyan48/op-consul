@@ -1,0 +1,64 @@
+version: '3'
+
+services: 
+  consul-agent: &consul-agent
+    image: consul:latest
+    networks:
+      - sky-net
+    command: "agent -retry-join consul-server-bootstrap -client 0.0.0.0"
+
+  consul-agent-2:
+    <<: *consul-agent
+
+  consul-agent-3:
+    <<: *consul-agent
+
+  consul-server-1: &consul-server
+    <<: *consul-agent
+    command: "agent -server -retry-join consul-server-bootstrap -client 0.0.0.0"
+
+  consul-server-2:
+    <<: *consul-server
+
+  consul-server-bootstrap:
+    <<: *consul-agent
+    ports:
+      - "8400:8400"
+      - "8500:8500"
+      - "8600:8600"
+      - "8600:8600/udp"
+    command: "agent -server -bootstrap-expect 3 -ui -client 0.0.0.0"
+    networks:
+      - sky-net
+
+  product-service:
+    image: meongbego/product
+    environment: 
+      - PRODUCT_SERVICE_HOST=0.0.0.0
+      - PRODUCT_SERVICE_PORT=8100
+      - CONSUL_HTTP_ADDR=consul-agent:8500 
+    command: go run main.go
+    ports: 
+      - "8100:8100"
+    links:
+      - consul-agent
+    networks:
+      - sky-net
+
+  user-service:
+    image: meongbego/user
+    environment: 
+      - USER_SERVICE_HOST=0.0.0.0
+      - USER_SERVICE_PORT=8080
+      - CONSUL_HTTP_ADDR=consul-agent:8500
+    ports: 
+      - "8080:8080" 
+    command: go run main.go
+    links:
+      - consul-agent
+    networks:
+      - sky-net
+
+networks:
+  sky-net:
+    driver: bridge
