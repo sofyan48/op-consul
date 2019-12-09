@@ -84,7 +84,7 @@ func main() {
 	registerServiceWithConsul()
 	http.HandleFunc("/healthcheck", healthcheck)
 	http.HandleFunc("/products", Products)
-	http.HandleFunc("/product", Configuration)
+	http.HandleFunc("/product/config", Configuration)
 	fmt.Printf("product service is up on port: %s", port())
 	http.ListenAndServe(port(), nil)
 }
