@@ -18,10 +18,22 @@ type User struct {
 	Products []product `json:"products"`
 }
 
+type UserOrder struct {
+	ID       uint64    `json:"id"`
+	Username string    `json:"username"`
+	Order []order `json:"orders"`
+}
 type product struct {
 	ID    uint64  `json:"id"`
 	Name  string  `json:"name"`
 	Price float64 `json:"price"`
+}
+
+type order struct {
+	ID    uint64  `json:"id"`
+	Name  string  `json:"name"`
+	Price float64 `json:"price"`
+	Status bool `json:status`
 }
 
 func registerServiceWithConsul() {
@@ -49,7 +61,7 @@ func registerServiceWithConsul() {
 	consul.Agent().ServiceRegister(registration)
 }
 
-func lookupServiceWithConsul(serviceName string) (string, error) {
+func lookupServiceWithConsul(svc string) (string, error) {
 	config := consulapi.DefaultConfig()
 	consul, err := consulapi.NewClient(config)
 	if err != nil {
@@ -59,7 +71,7 @@ func lookupServiceWithConsul(serviceName string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	srvc := services["product"]
+	srvc := services[svc]
 	address := srvc.Address
 	port := srvc.Port
 	return fmt.Sprintf("http://%s:%v", address, port), nil
@@ -68,7 +80,8 @@ func lookupServiceWithConsul(serviceName string) (string, error) {
 func main() {
 	registerServiceWithConsul()
 	http.HandleFunc("/healthcheck", healthcheck)
-	http.HandleFunc("/user", UserProduct)
+	http.HandleFunc("/user/product", UserProduct)
+	http.HandleFunc("/user/orders", OrderView)
 	fmt.Printf("user service is up on port: %s", port())
 	http.ListenAndServe(port(), nil)
 }
@@ -79,7 +92,7 @@ func healthcheck(w http.ResponseWriter, r *http.Request) {
 
 func UserProduct(w http.ResponseWriter, r *http.Request) {
 	p := []product{}
-	url, err := lookupServiceWithConsul("user")
+	url, err := lookupServiceWithConsul("product")
 	fmt.Println("URL: ", url)
 	if err != nil {
 		fmt.Fprintf(w, "Error. %s", err)
@@ -106,9 +119,39 @@ func UserProduct(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&u)
 }
 
+
+func OrderView(w http.ResponseWriter, r *http.Request) {
+	p := []order{}
+	url, err := lookupServiceWithConsul("order")
+	fmt.Println("URL: ", url)
+	if err != nil {
+		fmt.Fprintf(w, "Error. %s", err)
+		return
+	}
+	client := &http.Client{}
+	resp, err := client.Get(url + "/orders")
+	if err != nil {
+		fmt.Fprintf(w, "Error. %s", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if err := json.NewDecoder(resp.Body).Decode(&p); err != nil {
+		fmt.Fprintf(w, "Error. %s", err)
+		return
+	}
+	u := UserOrder{
+		ID:       1,
+		Username: "wn48@gmail.com",
+	}
+	u.Order = p
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(&u)
+}
+
 func port() string {
 	p := os.Getenv("USER_SERVICE_PORT")
-	h := os.Getenv("PRODUCT_SERVICE_HOST")
+	h := os.Getenv("USER_SERVICE_HOST")
 	if len(strings.TrimSpace(p)) == 0 {
 		return ":8080"
 	}

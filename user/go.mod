@@ -1,4 +1,4 @@
-module github.com/sofyan48/userSD
+module github.com/sofyan48/op-consul
 
 go 1.13
 
